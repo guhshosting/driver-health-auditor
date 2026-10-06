@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:driver-health-auditor:schema:1.0",
+  "title": "driver-health-auditor audit schema 1.0",
+  "type": "object",
+  "required": ["schema_version", "application_version", "host", "summary", "drivers", "devices", "findings", "warnings", "limitations"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "application_version": {"type": "string"},
+    "host": {
+      "type": "object", "required": ["os_version", "native_architecture", "elevated"],
+      "properties": {
+        "os_version": {"type": "string", "description": "Descriptive local build metadata; empty if unavailable."},
+        "native_architecture": {"type": "string"},
+        "elevated": {"type": ["boolean", "null"]}
+      }
+    },
+    "summary": {
+      "type": "object", "required": ["devices_examined", "drivers_correlated", "devices_with_driver_problems", "signature_trust_findings", "incomplete_records", "findings"],
+      "properties": {
+        "devices_examined": {"$ref": "#/$defs/count"},
+        "drivers_correlated": {"$ref": "#/$defs/count"},
+        "devices_with_driver_problems": {"$ref": "#/$defs/count"},
+        "signature_trust_findings": {"$ref": "#/$defs/count"},
+        "incomplete_records": {"$ref": "#/$defs/count"},
+        "findings": {"$ref": "#/$defs/count"}
+      }
+    },
+    "drivers": {"type": "array", "items": {"$ref": "#/$defs/driver"}},
+    "devices": {"type": "array", "items": {"$ref": "#/$defs/device"}},
+    "findings": {"type": "array", "items": {"$ref": "#/$defs/finding"}},
+    "warnings": {"$ref": "#/$defs/strings"},
+    "limitations": {"$ref": "#/$defs/strings"}
+  },
+  "$defs": {
+    "count": {"type": "integer", "minimum": 0},
+    "nullable_text": {"type": ["string", "null"]},
+    "nullable_uint": {"type": ["integer", "null"], "minimum": 0},
+    "strings": {"type": "array", "items": {"type": "string"}},
+    "signature": {
+      "type": "object", "required": ["state", "wintrust_status", "signer"],
+      "description": "Catalog own-signature or binary embedded-signature inspection; not catalog membership or kernel load policy.",
+      "properties": {
+        "state": {"enum": ["unavailable", "trusted_offline", "no_embedded_signature", "bad_digest", "local_trust_failure"]},
+        "wintrust_status": {"type": ["integer", "null"], "minimum": -2147483648, "maximum": 2147483647},
+        "signer": {"$ref": "#/$defs/nullable_text"}
+      }
+    },
+    "service": {
+      "type": "object", "required": ["name", "state", "type", "start_type", "image_path", "binary_path", "binary_state", "architecture", "embedded_signature"],
+      "properties": {
+        "name": {"$ref": "#/$defs/nullable_text"},
+        "state": {"type": "string"},
+        "type": {"$ref": "#/$defs/nullable_uint"},
+        "start_type": {"$ref": "#/$defs/nullable_uint"},
+        "image_path": {"$ref": "#/$defs/nullable_text"},
+        "binary_path": {"$ref": "#/$defs/nullable_text"},
+        "binary_state": {"enum": ["unavailable", "available", "missing", "blocked_path", "not_driver_service"]},
+        "architecture": {"enum": ["unknown", "x86", "x64", "arm64"]},
+        "embedded_signature": {"$ref": "#/$defs/signature"}
+      }
+    },
+    "driver": {
+      "type": "object", "required": ["id", "inf", "provider", "version", "date", "store_inf", "package_state", "package_provider", "package_driverver", "catalog", "catalog_signature", "device_ids", "services"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "inf": {"$ref": "#/$defs/nullable_text"},
+        "provider": {"$ref": "#/$defs/nullable_text"},
+        "version": {"$ref": "#/$defs/nullable_text"},
+        "date": {"$ref": "#/$defs/nullable_text"},
+        "store_inf": {"$ref": "#/$defs/nullable_text"},
+        "package_state": {"type": "string"},
+        "package_provider": {"$ref": "#/$defs/nullable_text"},
+        "package_driverver": {"$ref": "#/$defs/nullable_text"},
+        "catalog": {"$ref": "#/$defs/nullable_text"},
+        "catalog_signature": {"$ref": "#/$defs/signature"},
+        "device_ids": {"$ref": "#/$defs/strings"},
+        "services": {"type": "array", "items": {"$ref": "#/$defs/service"}}
+      }
+    },
+    "device": {
+      "type": "object", "required": ["instance_id", "driver_id", "name", "class", "service", "inf", "provider", "version", "date", "present", "problem_code", "devnode_status", "acquisition_errors"],
+      "properties": {
+        "instance_id": {"type": "string", "minLength": 1},
+        "driver_id": {"type": "string", "minLength": 1},
+        "name": {"$ref": "#/$defs/nullable_text"},
+        "class": {"$ref": "#/$defs/nullable_text"},
+        "service": {"$ref": "#/$defs/nullable_text"},
+        "inf": {"$ref": "#/$defs/nullable_text"},
+        "provider": {"$ref": "#/$defs/nullable_text"},
+        "version": {"$ref": "#/$defs/nullable_text"},
+        "date": {"$ref": "#/$defs/nullable_text"},
+        "present": {"type": ["boolean", "null"]},
+        "problem_code": {"$ref": "#/$defs/nullable_uint"},
+        "devnode_status": {"$ref": "#/$defs/nullable_uint"},
+        "acquisition_errors": {"$ref": "#/$defs/strings"}
+      }
+    },
+    "finding": {
+      "type": "object", "required": ["code", "severity", "driver_id", "device_id", "evidence"],
+      "properties": {
+        "code": {"type": "string"},
+        "severity": {"enum": ["info", "warning"]},
+        "driver_id": {"type": "string"},
+        "device_id": {"$ref": "#/$defs/nullable_text"},
+        "evidence": {"type": "string"}
+      }
+    }
+  }
+}
